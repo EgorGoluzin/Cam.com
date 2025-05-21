@@ -9,7 +9,7 @@ export function Sidebar() {
       <ul className="flex flex-col gap-2">
         <li
           onClick={() => setSection("search")}
-          className={`text-neutral-500 py-2 px-4 hover:bg-neutral-200 rounded-2xl cursor-pointer w-32 ${
+          className={`text-neutral-500 py-2 px-4 hover:bg-neutral-200 rounded-2xl cursor-pointer w-32 active:scale-95 transition-all ${
             section === "search" ? "bg-neutral-200/50 font-medium" : ""
           }`}
         >
@@ -17,7 +17,7 @@ export function Sidebar() {
         </li>
         <li
           onClick={() => setSection("generate")}
-          className={`text-neutral-500 py-2 px-4 hover:bg-neutral-200 rounded-2xl cursor-pointer w-32 ${
+          className={`text-neutral-500 py-2 px-4 hover:bg-neutral-200 rounded-2xl cursor-pointer w-32 active:scale-95 transition-all ${
             section === "generate" ? "bg-neutral-200/50 font-medium" : ""
           }`}
         >
