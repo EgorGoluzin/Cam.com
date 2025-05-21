@@ -4,7 +4,7 @@ export function Sidebar() {
   const { section, setSection } = useAppStore();
 
   return (
-    <nav className="sticky top-8 h-full">
+    <nav className="relative top-8 h-full md:sticky">
       <span className="text-2xl font-medium mb-6 block">Cam.com</span>
       <ul className="flex flex-col gap-2">
         <li
