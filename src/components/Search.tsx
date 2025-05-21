@@ -20,6 +20,7 @@ import backpack9 from "./images/backpack9.png";
 import backpack10 from "./images/backpack10.png";
 import backpack11 from "./images/backpack11.png";
 import backpack12 from "./images/backpack12.png";
+import { Dialog } from "@radix-ui/themes";
 
 export function Search() {
   const { query, setQuery } = useAppStore();
@@ -51,11 +52,22 @@ export function Search() {
               }`}
             >
               {template.images.map((image) => (
-                <img
-                  src={image}
-                  key={image}
-                  className="aspect-square object-cover border border-neutral-300 rounded-3xl"
-                />
+                <Dialog.Root>
+                  <Dialog.Trigger>
+                    <img
+                      src={image}
+                      key={image}
+                      className="aspect-square object-cover border border-neutral-300 rounded-3xl cursor-zoom-in"
+                    />
+                  </Dialog.Trigger>
+                  <Dialog.Content>
+                    <img
+                      src={image}
+                      key={image}
+                      className="h-[80vh] object-cover rounded-3xl mx-auto"
+                    />
+                  </Dialog.Content>
+                </Dialog.Root>
               ))}
             </div>
           </div>

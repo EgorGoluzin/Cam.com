@@ -1,3 +1,4 @@
+import { Button } from "@radix-ui/themes";
 import { useState } from "react";
 
 export function Generate() {
@@ -14,11 +15,7 @@ export function Generate() {
         className="bg-neutral-100 w-full p-2 rounded-xl mb-4 sticky top-6 border border-neutral-300"
         placeholder="Введите название предмета"
       />
-      {query ? (
-        <button className="w-full bg-neutral-700 text-white p-4 rounded-3xl active:scale-95 transition-all">
-          Создать
-        </button>
-      ) : null}
+      {query ? <Button className="w-full">Создать</Button> : null}
     </div>
   );
 }
