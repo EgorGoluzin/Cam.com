@@ -18,7 +18,7 @@ export function ImageGenerator() {
   const [error, setError] = useState<string | null>(null);
 
   const buildPrompt = () => {
-    return `Технический чертёж ${itemName}, профессиональный шаблон для кожевенного дела, вид сверху, чёткие линии резки, отметки для прошивки, точные размеры в мм/см, габариты: ${width} x ${height}, симметричный дизайн, минимализм, высококонтрастные линии на белом фоне, без теней, без перспективы, стиль векторной графики, ультра-детализация, масштабируемый дизайн в духе SVG, пригодный для реального производства${
+    return `Technical blueprint of a ${itemName}, professional leathercraft pattern template, top-down orthographic view, clean cut lines, stitching marks, precise dimensions in mm/cm, dimensions: ${width} x ${height}, symmetrical design, minimalist style, high-contrast lines on a white background, no shadows, no perspective, vector-art style, ultra-detailed, scalable and printable, suitable for real-world crafting${
       additional ? `, ${additional}` : ""
     }`;
   };
