@@ -7,30 +7,42 @@ const engineId =
 const STABILITY_API_URL = `https://api.stability.ai/v1/generation/${engineId}/text-to-image`;
 const API_KEY = import.meta.env.VITE_STABILITY_API_KEY;
 
+const PROJECTIONS = [
+  { label: "Вид сверху", value: "top-down orthographic view" },
+  { label: "Вид спереди", value: "front orthographic view" },
+  { label: "Вид сбоку", value: "side orthographic view" },
+  { label: "Вид сзади", value: "back orthographic view" },
+  { label: "аксонометрия", value: "isometric view" },
+];
+
 export function ImageGenerator() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const [itemName, setItemName] = useState("");
-  const [width, setWidth] = useState("1024");
-  const [height, setHeight] = useState("1024");
   const [additional, setAdditional] = useState("");
-  const [samples, setSamples] = useState(1);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [selectedProjections, setSelectedProjections] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<{ url: string; label: string }[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const buildPrompt = () => {
-    return `Technical blueprint of a ${itemName}, professional leathercraft pattern template, top-down orthographic view, clean cut lines, stitching marks, precise dimensions in mm/cm, dimensions: ${width} x ${height}, symmetrical design, minimalist style, high-contrast lines on a white background, no shadows, no perspective, vector-art style, ultra-detailed, scalable and printable, suitable for real-world crafting${
-      additional ? `, ${additional}` : ""
-    }`;
+  const buildPrompt = (view: string) => {
+    return `Technical blueprint of a ${itemName}; professional leathercraft pattern; ONLY ${view} projection; only one projection per image; do NOT include multiple views; clean cut lines, stitching guides; symmetrical, minimalist design; high-contrast on white; no shadows or perspective; ultra-detailed vector art; scalable and printable for real-world crafting${
+      additional ? `; ${additional}` : ""
+    }.`;
   };
-
-  const prompt = buildPrompt();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!formRef.current?.checkValidity()) {
       formRef.current?.reportValidity();
+      return;
+    }
+
+    if (selectedProjections.length === 0) {
+      setError("Выберите хотя бы одну проекцию");
       return;
     }
 
@@ -39,38 +51,63 @@ export function ImageGenerator() {
     setImageUrls([]);
 
     try {
-      const response = await fetch(STABILITY_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify({
-          text_prompts: [{ text: prompt }],
-          cfg_scale: 7,
-          height: parseInt(height),
-          width: parseInt(width),
-          steps: 30,
-          samples: samples, // Генерируем 3 изображения
-        }),
+      const requests = selectedProjections.map(async (projection) => {
+        const label = PROJECTIONS.find((p) => p.value === projection)?.label;
+
+        const response = await fetch(STABILITY_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${API_KEY}`,
+          },
+          body: JSON.stringify({
+            text_prompts: [{ text: buildPrompt(projection) }],
+            height: 1024,
+            width: 1024,
+            samples: 1,
+            steps: 30,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Ошибка генерации проекции ${label}: ${response.status} - ${errorText}`
+          );
+        }
+
+        const data = await response.json();
+        const base64 = data.artifacts?.[0]?.base64;
+        if (!base64) {
+          throw new Error(`Пустой результат генерации проекции ${label}`);
+        }
+
+        return {
+          url: `data:image/png;base64,${base64}`,
+          label: label ?? projection,
+        };
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Ошибка генерации: ${response.status} - ${errorText}`);
+      const results = await Promise.allSettled(requests);
+      const successful: { url: string; label: string }[] = [];
+      const errors: string[] = [];
+
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          successful.push(result.value);
+        } else {
+          errors.push(result.reason?.message ?? "Неизвестная ошибка");
+        }
       }
 
-      const data = await response.json();
-
-      if (!data.artifacts || !Array.isArray(data.artifacts)) {
-        throw new Error("Некорректный ответ от API");
+      if (successful.length) {
+        setImageUrls(successful);
       }
 
-      const urls = data.artifacts.map(
-        (art: { base64: string }) => `data:image/png;base64,${art.base64}`
-      );
-      setImageUrls(urls);
+      if (errors.length) {
+        setError(errors.join("\n"));
+      }
     } catch (err: unknown) {
       console.error(err);
       setError(
@@ -101,42 +138,22 @@ export function ImageGenerator() {
           minLength={2}
         />
 
-        <div className="flex gap-2">
-          <input
-            type="number"
-            className="w-1/2 p-2 border rounded"
-            placeholder="Ширина (мм)"
-            value={width}
-            onChange={(e) => setWidth(e.target.value)}
-            required
-            min={1024}
-            step={1}
-          />
-          <input
-            type="number"
-            className="w-1/2 p-2 border rounded"
-            placeholder="Высота (мм)"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
-            required
-            min={1024}
-            step={1}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            type="number"
-            className="w-1/2 p-2 border rounded"
-            placeholder="Кол-во изображений"
-            value={samples}
-            onChange={(e) => setSamples(e.target.valueAsNumber)}
-            required
-            min={1}
-            max={10}
-            step={1}
-          />
-        </div>
+        <select
+          multiple
+          className="w-full p-2 border rounded"
+          value={selectedProjections}
+          onChange={(e) =>
+            setSelectedProjections(
+              Array.from(e.target.selectedOptions, (o) => o.value)
+            )
+          }
+        >
+          {PROJECTIONS.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.label} view
+            </option>
+          ))}
+        </select>
 
         <textarea
           className="w-full p-2 border rounded"
@@ -161,23 +178,24 @@ export function ImageGenerator() {
         <div>
           <h2 className="font-semibold mt-4">Результаты:</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-            {imageUrls.map((url, idx) => (
-              <Dialog.Root>
+            {imageUrls.map((img, idx) => (
+              <Dialog.Root key={idx}>
                 <Dialog.Trigger>
                   <img
-                    key={idx}
-                    src={url}
-                    alt={`Generated blueprint ${idx + 1}`}
+                    src={img.url}
+                    alt={img.label}
                     className="rounded shadow"
                   />
                 </Dialog.Trigger>
                 <Dialog.Content>
                   <img
-                    key={idx}
-                    src={url}
-                    alt={`Generated blueprint ${idx + 1}`}
+                    src={img.url}
+                    alt={img.label}
                     className="h-[80vh] object-cover rounded mx-auto"
                   />
+                  <p className="text-center font-semibold mt-2">
+                    {img.label} view
+                  </p>
                 </Dialog.Content>
               </Dialog.Root>
             ))}
