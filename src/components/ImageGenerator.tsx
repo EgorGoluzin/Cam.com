@@ -11,8 +11,8 @@ export function ImageGenerator() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const [itemName, setItemName] = useState("");
-  const [width, setWidth] = useState("512");
-  const [height, setHeight] = useState("512");
+  const [width, setWidth] = useState("1024");
+  const [height, setHeight] = useState("1024");
   const [additional, setAdditional] = useState("");
   const [samples, setSamples] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -109,8 +109,7 @@ export function ImageGenerator() {
             value={width}
             onChange={(e) => setWidth(e.target.value)}
             required
-            min={10}
-            max={1000}
+            min={1024}
             step={1}
           />
           <input
@@ -120,8 +119,7 @@ export function ImageGenerator() {
             value={height}
             onChange={(e) => setHeight(e.target.value)}
             required
-            min={10}
-            max={1000}
+            min={1024}
             step={1}
           />
         </div>
