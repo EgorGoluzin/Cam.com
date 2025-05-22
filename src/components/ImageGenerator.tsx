@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 
-const STABILITY_API_URL =
-  "https://api.stability.ai/v2beta/stable-image/generate/core";
+const engineId =
+  import.meta.env?.VITE_STABILITY_AI_ENGINE_ID ?? "stable-diffusion-v1-6";
+const STABILITY_API_URL = `https://api.stability.ai/v1/generation/${engineId}/text-to-image`;
 const API_KEY = import.meta.env.VITE_STABILITY_API_KEY;
 
 export function ImageGenerator() {
@@ -11,12 +12,13 @@ export function ImageGenerator() {
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   const [additional, setAdditional] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [samples, setSamples] = useState(1);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const buildPrompt = () => {
-    return `Technical blueprint of a ${itemName}, professional leatherworking template, top-down orthographic view, clean cut lines, stitching marks, precise measurements in mm/cm, dimensions: ${width} x ${height} symmetrical design, minimalist style, high contrast lines on white background, no shadows, no perspective, vector-art style, ultra-detailed, scalable vector graphic (SVG) vibe, functional design for real-world crafting${
+    return `Технический чертёж ${itemName}, профессиональный шаблон для кожевенного дела, вид сверху, чёткие линии резки, отметки для прошивки, точные размеры в мм/см, габариты: ${width} x ${height}, симметричный дизайн, минимализм, высококонтрастные линии на белом фоне, без теней, без перспективы, стиль векторной графики, ультра-детализация, масштабируемый дизайн в духе SVG, пригодный для реального производства${
       additional ? `, ${additional}` : ""
     }`;
   };
@@ -32,29 +34,41 @@ export function ImageGenerator() {
 
     setLoading(true);
     setError(null);
-    setImageUrl(null);
+    setImageUrls([]);
 
     try {
-      const formData = new FormData();
-      formData.append("prompt", prompt);
-      formData.append("output_format", "webp");
-
       const response = await fetch(STABILITY_API_URL, {
         method: "POST",
         headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${API_KEY}`,
-          Accept: "image/*",
         },
-        body: formData,
+        body: JSON.stringify({
+          text_prompts: [{ text: prompt }],
+          cfg_scale: 7,
+          height: parseInt(height),
+          width: parseInt(width),
+          steps: 30,
+          samples: samples, // Генерируем 3 изображения
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`Ошибка генерации: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Ошибка генерации: ${response.status} - ${errorText}`);
       }
 
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      setImageUrl(objectUrl);
+      const data = await response.json();
+
+      if (!data.artifacts || !Array.isArray(data.artifacts)) {
+        throw new Error("Некорректный ответ от API");
+      }
+
+      const urls = data.artifacts.map(
+        (art: { base64: string }) => `data:image/png;base64,${art.base64}`
+      );
+      setImageUrls(urls);
     } catch (err: unknown) {
       console.error(err);
       setError(
@@ -110,6 +124,20 @@ export function ImageGenerator() {
           />
         </div>
 
+        <div className="flex gap-2">
+          <input
+            type="number"
+            className="w-1/2 p-2 border rounded"
+            placeholder="Кол-во изображений"
+            value={samples}
+            onChange={(e) => setSamples(e.target.valueAsNumber)}
+            required
+            min={1}
+            max={10}
+            step={1}
+          />
+        </div>
+
         <textarea
           className="w-full p-2 border rounded"
           placeholder="Дополнительные параметры (по желанию)"
@@ -129,14 +157,19 @@ export function ImageGenerator() {
 
       {error && <p className="text-red-500">{error}</p>}
 
-      {imageUrl && (
+      {imageUrls.length > 0 && (
         <div>
-          <h2 className="font-semibold mt-4">Результат:</h2>
-          <img
-            src={imageUrl}
-            alt="Generated blueprint"
-            className="mt-2 rounded shadow"
-          />
+          <h2 className="font-semibold mt-4">Результаты:</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+            {imageUrls.map((url, idx) => (
+              <img
+                key={idx}
+                src={url}
+                alt={`Generated blueprint ${idx + 1}`}
+                className="rounded shadow"
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
