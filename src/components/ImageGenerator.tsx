@@ -1,7 +1,9 @@
+import { Dialog } from "@radix-ui/themes";
 import { useState, useRef } from "react";
 
 const engineId =
-  import.meta.env?.VITE_STABILITY_AI_ENGINE_ID ?? "stable-diffusion-v1-6";
+  import.meta.env?.VITE_STABILITY_AI_ENGINE_ID ??
+  "stable-diffusion-xl-1024-v1-0";
 const STABILITY_API_URL = `https://api.stability.ai/v1/generation/${engineId}/text-to-image`;
 const API_KEY = import.meta.env.VITE_STABILITY_API_KEY;
 
@@ -9,8 +11,8 @@ export function ImageGenerator() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const [itemName, setItemName] = useState("");
-  const [width, setWidth] = useState("");
-  const [height, setHeight] = useState("");
+  const [width, setWidth] = useState("512");
+  const [height, setHeight] = useState("512");
   const [additional, setAdditional] = useState("");
   const [samples, setSamples] = useState(1);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -162,12 +164,24 @@ export function ImageGenerator() {
           <h2 className="font-semibold mt-4">Результаты:</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
             {imageUrls.map((url, idx) => (
-              <img
-                key={idx}
-                src={url}
-                alt={`Generated blueprint ${idx + 1}`}
-                className="rounded shadow"
-              />
+              <Dialog.Root>
+                <Dialog.Trigger>
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`Generated blueprint ${idx + 1}`}
+                    className="rounded shadow"
+                  />
+                </Dialog.Trigger>
+                <Dialog.Content>
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`Generated blueprint ${idx + 1}`}
+                    className="h-[80vh] object-cover rounded mx-auto"
+                  />
+                </Dialog.Content>
+              </Dialog.Root>
             ))}
           </div>
         </div>
