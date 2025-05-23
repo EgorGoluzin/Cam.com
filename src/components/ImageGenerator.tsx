@@ -1,4 +1,4 @@
-import { Dialog } from "@radix-ui/themes";
+import { Badge, Button, Dialog, Flex, TextArea } from "@radix-ui/themes";
 import { useState, useRef } from "react";
 
 const engineId =
@@ -20,7 +20,9 @@ export function ImageGenerator() {
 
   const [itemName, setItemName] = useState("");
   const [additional, setAdditional] = useState("");
-  const [selectedProjections, setSelectedProjections] = useState<string[]>([]);
+  const [selectedProjections, setSelectedProjections] = useState<string[]>([
+    "top-down orthographic view",
+  ]);
   const [imageUrls, setImageUrls] = useState<{ url: string; label: string }[]>(
     []
   );
@@ -28,9 +30,7 @@ export function ImageGenerator() {
   const [error, setError] = useState<string | null>(null);
 
   const buildPrompt = (view: string) => {
-    return `Technical blueprint of a ${itemName}; professional leathercraft pattern; ONLY ${view} projection; only one projection per image; do NOT include multiple views; clean cut lines, stitching guides; symmetrical, minimalist design; high-contrast on white; no shadows or perspective; ultra-detailed vector art; scalable and printable for real-world crafting${
-      additional ? `; ${additional}` : ""
-    }.`;
+    return `Technical drawing, blueprint style, of a ${itemName} in ${view}. The drawing should be monochrome, clean, and precise, showing detailed stitching lines, compartments, and edges. No background, isolated on white. Include measurement markers and a minimalist, professional aesthetic — resembling an industrial design draft.`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,57 +119,62 @@ export function ImageGenerator() {
   };
 
   return (
-    <div className="p-4 max-w-xl mx-auto space-y-4">
-      <h1 className="text-xl font-bold">Blueprint генератор</h1>
+    <div className="p-2 max-w-xl mx-auto">
+      <h1 className="text-xl font-bold mb-4">Blueprint генератор</h1>
 
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="space-y-2"
+        className="space-y-2 flex flex-col gap-2"
         noValidate
       >
-        <input
-          type="text"
-          className="w-full p-2 border rounded"
-          placeholder="Название изделия (например, сумка)"
+        <TextArea
+          // type="text"
+          // className="w-full p-2 border rounded"
+          placeholder="Название изделия (например, wallet)"
           value={itemName}
           onChange={(e) => setItemName(e.target.value)}
           required
           minLength={2}
         />
+        <Flex direction="column" gap="2">
+          <span>Выберите проекции</span>
+          <Flex align="center" gap="2" wrap="wrap">
+            {PROJECTIONS.map((p) => (
+              <Badge
+                className="cursor-pointer"
+                size="3"
+                key={p.value}
+                variant={
+                  selectedProjections.includes(p.value) ? "solid" : "outline"
+                }
+                onClick={() => {
+                  setSelectedProjections((prev) => {
+                    if (prev.includes(p.value)) {
+                      return prev.filter((pr) => pr !== p.value);
+                    } else {
+                      return [...prev, p.value];
+                    }
+                  });
+                }}
+              >
+                {p.label}
+              </Badge>
+            ))}
+          </Flex>
+        </Flex>
 
-        <select
-          multiple
-          className="w-full p-2 border rounded"
-          value={selectedProjections}
-          onChange={(e) =>
-            setSelectedProjections(
-              Array.from(e.target.selectedOptions, (o) => o.value)
-            )
-          }
-        >
-          {PROJECTIONS.map((p) => (
-            <option key={p.value} value={p.value}>
-              {p.label} view
-            </option>
-          ))}
-        </select>
-
-        <textarea
-          className="w-full p-2 border rounded"
+        <TextArea
+          // className="w-full p-2 border rounded"
           placeholder="Дополнительные параметры (по желанию)"
           rows={2}
           value={additional}
           onChange={(e) => setAdditional(e.target.value)}
         />
 
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={loading}
-        >
+        <Button type="submit" disabled={loading} size="3">
           {loading ? "Генерация..." : "Сгенерировать чертёж"}
-        </button>
+        </Button>
       </form>
 
       {error && <p className="text-red-500">{error}</p>}
