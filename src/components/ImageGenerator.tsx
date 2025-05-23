@@ -67,6 +67,8 @@ export function ImageGenerator() {
             width: 1024,
             samples: 1,
             steps: 30,
+            cfg_scale: 14,
+            sampler: "K_DPMPP_2M",
           }),
         });
 
